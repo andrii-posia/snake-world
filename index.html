@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐍 Snake World Explorer</title>
+    <meta name="description" content="Explore the world through an epic snake adventure with weather-based backgrounds">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Weather Effects Container -->
+    <div id="weather-effects"></div>
+
+    <!-- Main Container -->
+    <div class="game-container">
+        <!-- Header -->
+        <header class="game-header">
+            <h1 class="game-title">
+                <span class="title-icon">🌍</span>
+                SNAKE WORLD EXPLORER
+                <span class="title-glow"></span>
+            </h1>
+            <div class="location-selector">
+                <label for="country-select">📍 Location:</label>
+                <select id="country-select">
+                    <option value="london,uk">🇬🇧 United Kingdom</option>
+                    <option value="new york,us" selected>🇺🇸 United States</option>
+                    <option value="tokyo,jp">🇯🇵 Japan</option>
+                    <option value="paris,fr">🇫🇷 France</option>
+                    <option value="sydney,au">🇦🇺 Australia</option>
+                    <option value="dubai,ae">🇦🇪 UAE</option>
+                    <option value="moscow,ru">🇷🇺 Russia</option>
+                    <option value="rio de janeiro,br">🇧🇷 Brazil</option>
+                    <option value="cape town,za">🇿🇦 South Africa</option>
+                    <option value="mumbai,in">🇮🇳 India</option>
+                    <option value="beijing,cn">🇨🇳 China</option>
+                    <option value="cairo,eg">🇪🇬 Egypt</option>
+                </select>
+                <div id="weather-info" class="weather-info">
+                    <span id="weather-icon">🌍</span>
+                    <span id="weather-temp">--</span>
+                    <span id="weather-desc">Select a location</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scoreboard -->
+        <div class="scoreboard">
+            <div class="score-panel player1-score">
+                <span class="player-label">🧊 P1</span>
+                <span class="score-value" id="score-p1">0</span>
+            </div>
+            <div class="score-panel single-score" id="single-score-panel">
+                <span class="score-label">SCORE</span>
+                <span class="score-value" id="score-single">0</span>
+            </div>
+            <div class="score-panel player2-score">
+                <span class="player-label">🔵 P2</span>
+                <span class="score-value" id="score-p2">0</span>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <div class="canvas-wrapper">
+            <canvas id="game-canvas"></canvas>
+            <div class="canvas-glow"></div>
+        </div>
+
+        <!-- Controls Info -->
+        <div class="controls-info" id="controls-info">
+            <div class="control-group">
+                <span class="control-label">Player 1</span>
+                <div class="keys">
+                    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+                </div>
+            </div>
+            <div class="control-group" id="p2-controls" style="display: none;">
+                <span class="control-label">Player 2</span>
+                <div class="keys">
+                    <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+                </div>
+            </div>
+            <button class="btn btn-pause" id="btn-pause" style="display: none;">
+                ⏸️ Pause
+            </button>
+        </div>
+
+        <!-- Start Menu Overlay -->
+        <div class="overlay" id="start-menu">
+            <div class="menu-container">
+                <div class="menu-card">
+                    <div class="menu-snake-icon">🌍</div>
+                    <h2 class="menu-title">SNAKE WORLD EXPLORER</h2>
+                    <p class="menu-subtitle">Explore the World One Bite at a Time</p>
+                    <div class="menu-buttons">
+                        <button class="btn btn-primary" id="btn-single">
+                            <span class="btn-icon">👤</span>
+                            Single Player
+                        </button>
+                        <button class="btn btn-secondary" id="btn-multi">
+                            <span class="btn-icon">👥</span>
+                            Multiplayer
+                        </button>
+                    </div>
+                    <div class="menu-features">
+                        <div class="feature">✓ Arrow Keys / WASD</div>
+                        <div class="feature">✓ Real-time Weather</div>
+                        <div class="feature">✓ 2-Player Mode</div>
+                    </div>
+                </div>
+                <div class="highscore-panel">
+                    <h3 class="highscore-title">🏆 HIGH SCORES</h3>
+                    <div class="highscore-list" id="highscore-list">
+                        <div class="highscore-item">
+                            <span class="rank">1.</span>
+                            <span class="name">---</span>
+                            <span class="score">0</span>
+                        </div>
+                        <div class="highscore-item">
+                            <span class="rank">2.</span>
+                            <span class="name">---</span>
+                            <span class="score">0</span>
+                        </div>
+                        <div class="highscore-item">
+                            <span class="rank">3.</span>
+                            <span class="name">---</span>
+                            <span class="score">0</span>
+                        </div>
+                        <div class="highscore-item">
+                            <span class="rank">4.</span>
+                            <span class="name">---</span>
+                            <span class="score">0</span>
+                        </div>
+                        <div class="highscore-item">
+                            <span class="rank">5.</span>
+                            <span class="name">---</span>
+                            <span class="score">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div class="overlay hidden" id="game-over">
+            <div class="menu-card game-over-card">
+                <div class="game-over-icon">💀</div>
+                <h2 class="menu-title game-over-title">GAME OVER</h2>
+                <div class="final-score">
+                    <span id="final-score-label">Final Score</span>
+                    <span class="final-score-value" id="final-score-value">0</span>
+                </div>
+                <div id="winner-display" class="winner-display hidden">
+                    <span id="winner-text">Winner: Player 1</span>
+                </div>
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" id="btn-restart">
+                        <span class="btn-icon">🔄</span>
+                        Play Again
+                    </button>
+                    <button class="btn btn-secondary" id="btn-menu">
+                        <span class="btn-icon">🏠</span>
+                        Main Menu
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pause Overlay -->
+        <div class="overlay hidden" id="pause-menu">
+            <div class="menu-card">
+                <div class="menu-snake-icon">⏸️</div>
+                <h2 class="menu-title">PAUSED</h2>
+                <p class="menu-subtitle">Press SPACE to resume</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Particle Container -->
+    <div id="particles"></div>
+
+    <!-- Scripts - Order matters! -->
+    <script src="audio.js"></script>
+    <script src="highscores.js"></script>
+    <script src="powerups.js"></script>
+    <script src="weather.js"></script>
+    <script src="multiplayer.js"></script>
+    <script src="game.js"></script>
+</body>
+
+</html>
