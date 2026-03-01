@@ -803,6 +803,22 @@ kbd:hover {
     }
 }
 
+/* Food-eat particle burst */
+@keyframes eatParticleBurst {
+    0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(calc(var(--px) * 1px), calc(var(--py) * 1px)) scale(0); opacity: 0; }
+}
+
+.eat-particle {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 50;
+    animation: eatParticleBurst 600ms ease-out forwards;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .game-title {
@@ -908,6 +924,23 @@ kbd:hover {
 .btn-pause:hover {
     background: rgba(255, 102, 0, 0.2);
     box-shadow: 0 0 20px var(--neon-orange);
+}
+
+.btn-sound {
+    background: transparent;
+    color: var(--neon-cyan);
+    border: 2px solid var(--neon-cyan);
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    margin-left: 8px;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    transition: all 0.3s;
+}
+
+.btn-sound:hover {
+    background: rgba(0, 255, 255, 0.15);
+    box-shadow: 0 0 15px var(--neon-cyan);
 }
 
 /* Score styles update for ice-blue snake */

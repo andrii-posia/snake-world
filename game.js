@@ -22,6 +22,19 @@ class SnakeGame {
         this.level = 1;
         this.baseSpeed = 120;
 
+        // Difficulty
+        this.difficulty = 'medium';
+        this.bonusFruitDuration = 180;
+        this.difficultyConfig = {
+            easy:   { baseSpeed: 150, obstacleFreq: 0, bonusFruitTimer: 300 },
+            medium: { baseSpeed: 120, obstacleFreq: 2, bonusFruitTimer: 180 },
+            hard:   { baseSpeed: 90,  obstacleFreq: 1, bonusFruitTimer: 120 }
+        };
+
+        // Touch state
+        this.touchStartX = null;
+        this.touchStartY = null;
+
         // Snake
         this.snake = [];
         this.direction = { x: 1, y: 0 };
@@ -74,11 +87,55 @@ class SnakeGame {
 
     setupEventListeners() {
         document.addEventListener('keydown', this.handleKeyDown);
+
+        // Touch/swipe controls for mobile
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            this.touchStartX = touch.clientX;
+            this.touchStartY = touch.clientY;
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (this.touchStartX === null) return;
+            const touch = e.changedTouches[0];
+            const dx = touch.clientX - this.touchStartX;
+            const dy = touch.clientY - this.touchStartY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            const MIN_SWIPE = 30;
+            if (Math.max(absDx, absDy) < MIN_SWIPE) {
+                this.touchStartX = null;
+                this.touchStartY = null;
+                return;
+            }
+            let newDir;
+            if (absDx > absDy) {
+                newDir = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+            } else {
+                newDir = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+            }
+            if (this.state === 'playing') {
+                const lastQueued = this.directionQueue.length > 0
+                    ? this.directionQueue[this.directionQueue.length - 1]
+                    : this.direction;
+                if (
+                    (lastQueued.x + newDir.x !== 0 || lastQueued.y + newDir.y !== 0) &&
+                    this.directionQueue.length < 3
+                ) {
+                    this.directionQueue.push(newDir);
+                    if (typeof audio !== 'undefined') audio.init();
+                }
+            }
+            this.touchStartX = null;
+            this.touchStartY = null;
+        }, { passive: false });
     }
 
     setupUI() {
         // Start menu buttons
-        document.getElementById('btn-single')?.addEventListener('click', () => this.startGame('single'));
+        document.getElementById('btn-single')?.addEventListener('click', () => this.showDifficultyMenu());
         document.getElementById('btn-multi')?.addEventListener('click', () => this.showMultiplayerMenu());
 
         // Game over buttons
@@ -89,6 +146,12 @@ class SnakeGame {
         document.getElementById('btn-pause')?.addEventListener('click', () => {
             if (this.state === 'playing') this.pauseGame();
             else if (this.state === 'paused') this.resumeGame();
+        });
+
+        // Sound toggle button
+        document.getElementById('btn-sound')?.addEventListener('click', () => {
+            const isEnabled = audio.toggle();
+            document.getElementById('btn-sound').textContent = isEnabled ? '🔊' : '🔇';
         });
 
         // Check for room code in URL
@@ -104,9 +167,17 @@ class SnakeGame {
             e.preventDefault();
         }
 
+        // Sound toggle - works in any state
+        if (e.key === 'm' || e.key === 'M') {
+            const isEnabled = audio.toggle();
+            const btn = document.getElementById('btn-sound');
+            if (btn) btn.textContent = isEnabled ? '🔊' : '🔇';
+            return;
+        }
+
         // Menu navigation
         if (this.state === 'menu') {
-            if (e.key === '1') this.startGame('single');
+            if (e.key === '1') this.showDifficultyMenu();
             if (e.key === '2') this.showMultiplayerMenu();
             return;
         }
@@ -158,6 +229,16 @@ class SnakeGame {
         this.score = 0;
         this.level = 1;
 
+        // Apply difficulty settings
+        if (mode === 'single') {
+            const cfg = this.difficultyConfig[this.difficulty];
+            this.baseSpeed = cfg.baseSpeed;
+            this.bonusFruitDuration = cfg.bonusFruitTimer;
+        } else {
+            this.baseSpeed = 120;
+            this.bonusFruitDuration = 180;
+        }
+
         // Initialize snake
         const startX = Math.floor(this.gridWidth / 4);
         const startY = Math.floor(this.gridHeight / 2);
@@ -199,8 +280,9 @@ class SnakeGame {
         document.querySelector('.scoreboard')?.classList.toggle('single-mode', mode === 'single');
         document.getElementById('p2-controls').style.display = mode === 'multi' ? 'flex' : 'none';
 
-        // Show pause button
+        // Show pause and sound buttons
         document.getElementById('btn-pause').style.display = 'inline-block';
+        document.getElementById('btn-sound').style.display = 'inline-block';
 
         // Play start sound
         if (typeof audio !== 'undefined') {
@@ -291,9 +373,12 @@ class SnakeGame {
 
         // Check food collision
         if (newHead.x === this.food.x && newHead.y === this.food.y) {
+            const eatenX = this.food.x;
+            const eatenY = this.food.y;
             this.score += 10;
             this.updateScoreDisplay();
             this.placeFood();
+            this.spawnEatParticles(eatenX, eatenY, this.colors.food);
 
             if (typeof audio !== 'undefined') audio.playEat();
 
@@ -317,8 +402,11 @@ class SnakeGame {
 
         // Check bonus fruit collision
         if (this.bonusFruit && newHead.x === this.bonusFruit.x && newHead.y === this.bonusFruit.y) {
+            const bx = this.bonusFruit.x;
+            const by = this.bonusFruit.y;
             this.score += this.bonusFruit.points;
             this.updateScoreDisplay();
+            this.spawnEatParticles(bx, by, '#ffdd00');
             this.bonusFruit = null;
             if (typeof audio !== 'undefined') audio.playBonusEat();
         }
@@ -551,7 +639,7 @@ class SnakeGame {
         this.bonusFruit = {
             ...position,
             ...fruitType,
-            timer: 180 // ~3 seconds at 60fps equivalent
+            timer: this.bonusFruitDuration || 180
         };
     }
 
@@ -580,8 +668,9 @@ class SnakeGame {
         if (typeof audio !== 'undefined') audio.playLevelUp();
         this.updateScoreDisplay();
 
-        // Add obstacles at certain levels
-        if (this.level % 2 === 0) {
+        // Add obstacles based on difficulty
+        const freq = this.difficultyConfig[this.difficulty]?.obstacleFreq ?? 2;
+        if (freq > 0 && this.level % freq === 0) {
             this.addObstacle();
         }
     }
@@ -679,8 +768,9 @@ class SnakeGame {
         this.hideAllOverlays();
         document.getElementById('start-menu').classList.remove('hidden');
 
-        // Hide pause button
+        // Hide pause and sound buttons
         document.getElementById('btn-pause').style.display = 'none';
+        document.getElementById('btn-sound').style.display = 'none';
 
         // Update high scores in menu
         this.updateHighScoreDisplay();
@@ -721,6 +811,40 @@ class SnakeGame {
     }
 
     // ===== MULTIPLAYER METHODS =====
+
+    showDifficultyMenu() {
+        const card = document.querySelector('.menu-card');
+        card.innerHTML = `
+            <div class="menu-snake-icon">⚙️</div>
+            <h2 class="menu-title">DIFFICULTY</h2>
+            <p class="menu-subtitle">Choose your challenge</p>
+            <div class="menu-buttons">
+                <button class="btn btn-secondary" id="btn-easy"><span class="btn-icon">🌿</span>Easy</button>
+                <button class="btn btn-primary" id="btn-medium"><span class="btn-icon">⚡</span>Medium</button>
+                <button class="btn btn-secondary" id="btn-hard"><span class="btn-icon">💀</span>Hard</button>
+                <button class="btn btn-secondary" id="btn-back-diff"><span class="btn-icon">⬅️</span>Back</button>
+            </div>
+            <div class="menu-features">
+                <div class="feature" id="diff-desc">Hover a difficulty to preview it</div>
+            </div>
+        `;
+        const descriptions = {
+            easy:   '✓ Slow speed  ✓ No obstacles  ✓ Long bonus time',
+            medium: '✓ Normal speed  ✓ Obstacles every 2 levels',
+            hard:   '✓ Fast speed  ✓ Obstacles every level  ✓ Short bonus'
+        };
+        ['easy', 'medium', 'hard'].forEach(diff => {
+            const btn = document.getElementById(`btn-${diff}`);
+            btn.addEventListener('mouseenter', () => {
+                document.getElementById('diff-desc').textContent = descriptions[diff];
+            });
+            btn.addEventListener('click', () => {
+                this.difficulty = diff;
+                this.startGame('single');
+            });
+        });
+        document.getElementById('btn-back-diff').addEventListener('click', () => this.resetMainMenu());
+    }
 
     showMultiplayerMenu() {
         const overlay = document.getElementById('start-menu');
@@ -875,9 +999,9 @@ class SnakeGame {
         const card = overlay.querySelector('.menu-card');
 
         card.innerHTML = `
-            <div class="menu-snake-icon">🐍</div>
-            <h2 class="menu-title">SNAKE ARENA</h2>
-            <p class="menu-subtitle">The Classic Arcade Game</p>
+            <div class="menu-snake-icon">🌍</div>
+            <h2 class="menu-title">SNAKE WORLD EXPLORER</h2>
+            <p class="menu-subtitle">Explore the World One Bite at a Time</p>
             <div class="menu-buttons">
                 <button class="btn btn-primary" id="btn-single">
                     <span class="btn-icon">👤</span>
@@ -890,13 +1014,38 @@ class SnakeGame {
             </div>
             <div class="menu-features">
                 <div class="feature">✓ Arrow Keys / WASD</div>
-                <div class="feature">✓ Real-time Weather</div>
-                <div class="feature">✓ Online Multiplayer</div>
+                <div class="feature">✓ 3 Difficulty Levels</div>
+                <div class="feature">✓ 2-Player Mode</div>
             </div>
         `;
 
-        document.getElementById('btn-single').addEventListener('click', () => this.startGame('single'));
+        document.getElementById('btn-single').addEventListener('click', () => this.showDifficultyMenu());
         document.getElementById('btn-multi').addEventListener('click', () => this.showMultiplayerMenu());
+    }
+
+    spawnEatParticles(gridX, gridY, color) {
+        const container = document.getElementById('particles');
+        if (!container) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const screenX = rect.left + (gridX + 0.5) * this.cellSize;
+        const screenY = rect.top  + (gridY + 0.5) * this.cellSize;
+        const COUNT = 8;
+        for (let i = 0; i < COUNT; i++) {
+            const angle = (i / COUNT) * Math.PI * 2;
+            const speed = 30 + Math.random() * 40;
+            const px = Math.round(Math.cos(angle) * speed);
+            const py = Math.round(Math.sin(angle) * speed);
+            const p = document.createElement('div');
+            p.className = 'eat-particle';
+            p.style.left = `${screenX}px`;
+            p.style.top  = `${screenY}px`;
+            p.style.background = color;
+            p.style.boxShadow  = `0 0 6px ${color}`;
+            p.style.setProperty('--px', px);
+            p.style.setProperty('--py', py);
+            container.appendChild(p);
+            setTimeout(() => p.remove(), 620);
+        }
     }
 }
 
