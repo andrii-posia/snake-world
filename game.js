@@ -25,7 +25,7 @@ class SnakeGame {
         // Snake
         this.snake = [];
         this.direction = { x: 1, y: 0 };
-        this.nextDirection = { x: 1, y: 0 };
+        this.directionQueue = [];
 
         // Opponent snake (multiplayer)
         this.opponentSnake = [];
@@ -137,9 +137,15 @@ class SnakeGame {
 
             const newDir = keyMap[e.key];
             if (newDir) {
-                // Prevent 180-degree turns
-                if (this.direction.x + newDir.x !== 0 || this.direction.y + newDir.y !== 0) {
-                    this.nextDirection = newDir;
+                // Compare against last queued direction to prevent 180-degree turns
+                const lastQueued = this.directionQueue.length > 0
+                    ? this.directionQueue[this.directionQueue.length - 1]
+                    : this.direction;
+                if (
+                    (lastQueued.x + newDir.x !== 0 || lastQueued.y + newDir.y !== 0) &&
+                    this.directionQueue.length < 3
+                ) {
+                    this.directionQueue.push(newDir);
                     if (typeof audio !== 'undefined') audio.init();
                 }
             }
@@ -161,7 +167,7 @@ class SnakeGame {
             { x: startX - 2, y: startY }
         ];
         this.direction = { x: 1, y: 0 };
-        this.nextDirection = { x: 1, y: 0 };
+        this.directionQueue = [];
 
         // Initialize opponent for multiplayer
         if (mode === 'multi') {
@@ -235,8 +241,10 @@ class SnakeGame {
     }
 
     update() {
-        // Update direction
-        this.direction = { ...this.nextDirection };
+        // Consume next queued direction if available
+        if (this.directionQueue.length > 0) {
+            this.direction = this.directionQueue.shift();
+        }
 
         // Calculate new head position
         const head = this.snake[0];
@@ -414,6 +422,24 @@ class SnakeGame {
         }
     }
 
+    drawRoundRect(ctx, x, y, w, h, r) {
+        if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(x, y, w, h, r);
+        } else {
+            // Fallback for browsers without native roundRect support
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.arcTo(x + w, y,     x + w, y + r,     r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+            ctx.lineTo(x + r, y + h);
+            ctx.arcTo(x,     y + h, x,       y + h - r, r);
+            ctx.lineTo(x, y + r);
+            ctx.arcTo(x,     y,     x + r,   y,         r);
+            ctx.closePath();
+        }
+    }
+
     drawSnake(snake, bodyColor, headColor) {
         snake.forEach((segment, index) => {
             const x = segment.x * this.cellSize;
@@ -432,7 +458,7 @@ class SnakeGame {
 
             // Rounded rectangle for each segment
             this.ctx.beginPath();
-            this.ctx.roundRect(x + 1, y + 1, size, size, 4);
+            this.drawRoundRect(this.ctx, x + 1, y + 1, size, size, 4);
             this.ctx.fill();
 
             // Eyes on head
@@ -552,6 +578,7 @@ class SnakeGame {
     levelUp() {
         this.level++;
         if (typeof audio !== 'undefined') audio.playLevelUp();
+        this.updateScoreDisplay();
 
         // Add obstacles at certain levels
         if (this.level % 2 === 0) {
@@ -610,10 +637,15 @@ class SnakeGame {
             scoreValue.textContent = this.score;
             winnerDisplay.classList.add('hidden');
 
-            // Auto-save high score if it qualifies
-            if (this.isNewHighScore(this.score)) {
-                const initials = prompt('New High Score! Enter your initials (3 letters):', 'AAA') || 'AAA';
-                this.saveHighScore(initials.substring(0, 3).toUpperCase(), this.score);
+            // Show high score entry form if score qualifies
+            if (highScores.isHighScore(this.score)) {
+                const gameOverCard = document.querySelector('#game-over .game-over-card');
+                const entryForm = highScores.renderEntryForm(this.score, (initials) => {
+                    highScores.addScore(initials, this.score);
+                    entryForm.remove();
+                    this.updateHighScoreDisplay();
+                });
+                gameOverCard.appendChild(entryForm);
             }
         } else {
             // Multiplayer - show winner
@@ -663,31 +695,13 @@ class SnakeGame {
         const highScoreList = document.getElementById('highscore-list');
         if (!highScoreList) return;
 
-        // Get scores from localStorage
-        const scores = JSON.parse(localStorage.getItem('snakeHighScores') || '[]');
-
-        // Update the display
+        const scores = highScores.getScores();
         const items = highScoreList.querySelectorAll('.highscore-item');
         items.forEach((item, index) => {
             const score = scores[index];
-            item.querySelector('.name').textContent = score ? score.name : '---';
+            item.querySelector('.name').textContent = score ? score.initials : '---';
             item.querySelector('.score').textContent = score ? score.score : '0';
         });
-    }
-
-    saveHighScore(name, score) {
-        let scores = JSON.parse(localStorage.getItem('snakeHighScores') || '[]');
-        scores.push({ name, score });
-        scores.sort((a, b) => b.score - a.score);
-        scores = scores.slice(0, 5); // Keep top 5
-        localStorage.setItem('snakeHighScores', JSON.stringify(scores));
-        this.updateHighScoreDisplay();
-    }
-
-    isNewHighScore(score) {
-        const scores = JSON.parse(localStorage.getItem('snakeHighScores') || '[]');
-        if (scores.length < 5) return score > 0;
-        return score > scores[scores.length - 1].score;
     }
 
     hideAllOverlays() {
@@ -702,6 +716,8 @@ class SnakeGame {
         } else {
             document.getElementById('score-p1').textContent = this.score;
         }
+        const levelEl = document.getElementById('level-value');
+        if (levelEl) levelEl.textContent = this.level;
     }
 
     // ===== MULTIPLAYER METHODS =====
