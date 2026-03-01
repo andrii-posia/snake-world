@@ -9,6 +9,7 @@ class WeatherSystem {
         this.currentWeather = null;
         this.effectsContainer = document.getElementById('weather-effects');
         this.particles = [];
+        this.lightningInterval = null;
     }
 
     async fetchWeather(location) {
@@ -157,7 +158,10 @@ class WeatherSystem {
     }
 
     createLightning() {
-        setInterval(() => {
+        if (this.lightningInterval !== null) {
+            clearInterval(this.lightningInterval);
+        }
+        this.lightningInterval = setInterval(() => {
             if (Math.random() < 0.1) {
                 document.body.style.backgroundColor = '#fff';
                 setTimeout(() => {
@@ -192,6 +196,10 @@ class WeatherSystem {
     }
 
     clearEffects() {
+        if (this.lightningInterval !== null) {
+            clearInterval(this.lightningInterval);
+            this.lightningInterval = null;
+        }
         this.particles.forEach(p => p.remove());
         this.particles = [];
     }
