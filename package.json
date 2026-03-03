@@ -9,7 +9,9 @@
         "review:dry": "git-diff-ai-reviewer review --dry-run"
     },
     "devDependencies": {
-        "git-diff-ai-reviewer": "github:andrii-posia/ai-review"
+        "@google/genai": "^1.43.0",
+        "dotenv": "^17.3.1",
+        "git-diff-ai-reviewer": "^1.1.4"
     },
     "keywords": [
         "snake",
