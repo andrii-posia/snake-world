@@ -4,12 +4,12 @@
     "description": "Snake World - A feature-rich snake game",
     "main": "game.js",
     "scripts": {
-        "review": "ai-review review",
-        "review:fix": "ai-review fix",
-        "review:dry": "ai-review review --dry-run"
+        "review": "git-diff-ai-reviewer review",
+        "review:fix": "git-diff-ai-reviewer fix",
+        "review:dry": "git-diff-ai-reviewer review --dry-run"
     },
     "devDependencies": {
-        "code-review-ai": "github:andrii-posia/ai-review"
+        "git-diff-ai-reviewer": "github:andrii-posia/ai-review"
     },
     "keywords": [
         "snake",
