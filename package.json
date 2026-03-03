@@ -11,12 +11,12 @@
     "devDependencies": {
         "@google/genai": "^1.43.0",
         "dotenv": "^17.3.1",
-        "git-diff-ai-reviewer": "^1.1.4"
+        "git-diff-ai-reviewer": "^1.2.1"
     },
     "keywords": [
         "snake",
         "game"
     ],
-    "author": "",
+    "author": "Andrii Posia",
     "license": "MIT"
 }

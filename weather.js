@@ -220,6 +220,7 @@ const weather = new WeatherSystem();
 
 // Country background images (using Unsplash for free images)
 const countryBackgrounds = {
+    'kyiv,ua': 'kyiv_background.png', // Kyiv, Ukraine
     'london,uk': 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1920&q=80', // London
     'new york,us': 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1920&q=80', // NYC
     'tokyo,jp': 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1920&q=80', // Tokyo
@@ -236,6 +237,7 @@ const countryBackgrounds = {
 
 // Country names for display
 const countryNames = {
+    'kyiv,ua': 'Ukraine',
     'london,uk': 'United Kingdom',
     'new york,us': 'United States',
     'tokyo,jp': 'Japan',

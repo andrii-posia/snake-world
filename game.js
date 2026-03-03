@@ -429,13 +429,13 @@ class SnakeGame {
             // Fallback for browsers without native roundRect support
             ctx.moveTo(x + r, y);
             ctx.lineTo(x + w - r, y);
-            ctx.arcTo(x + w, y,     x + w, y + r,     r);
+            ctx.arcTo(x + w, y, x + w, y + r, r);
             ctx.lineTo(x + w, y + h - r);
             ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
             ctx.lineTo(x + r, y + h);
-            ctx.arcTo(x,     y + h, x,       y + h - r, r);
+            ctx.arcTo(x, y + h, x, y + h - r, r);
             ctx.lineTo(x, y + r);
-            ctx.arcTo(x,     y,     x + r,   y,         r);
+            ctx.arcTo(x, y, x + r, y, r);
             ctx.closePath();
         }
     }
@@ -621,6 +621,7 @@ class SnakeGame {
     }
 
     gameOver() {
+        if (this.state === 'gameover') return;
         this.state = 'gameover';
         cancelAnimationFrame(this.animationId);
 
@@ -640,6 +641,13 @@ class SnakeGame {
             // Show high score entry form if score qualifies
             if (highScores.isHighScore(this.score)) {
                 const gameOverCard = document.querySelector('#game-over .game-over-card');
+
+                // Clear any existing high score forms from previous games
+                const existingForm = gameOverCard.querySelector('.highscore-entry');
+                if (existingForm) {
+                    existingForm.remove();
+                }
+
                 const entryForm = highScores.renderEntryForm(this.score, (initials) => {
                     highScores.addScore(initials, this.score);
                     entryForm.remove();
