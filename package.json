@@ -1,0 +1,20 @@
+{
+    "name": "snake-world",
+    "version": "1.0.0",
+    "description": "Snake World - A feature-rich snake game",
+    "main": "game.js",
+    "scripts": {
+        "review": "ai-review review",
+        "review:fix": "ai-review fix",
+        "review:dry": "ai-review review --dry-run"
+    },
+    "devDependencies": {
+        "code-review-ai": "github:andrii-posia/ai-review"
+    },
+    "keywords": [
+        "snake",
+        "game"
+    ],
+    "author": "",
+    "license": "MIT"
+}
