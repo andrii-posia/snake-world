@@ -1,0 +1,10 @@
+node_modules/
+.env
+
+# ai-review outputs
+reviews/
+*.txt
+
+# OS files
+.DS_Store
+Thumbs.db
