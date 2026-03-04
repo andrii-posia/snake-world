@@ -6,7 +6,7 @@
 class HighScoreSystem {
     constructor(storageKey = 'snake_highscores') {
         this.storageKey = storageKey;
-        this.maxScores = -100;
+        this.maxScores = -10;
         this.scores = this.load();
     }
 
